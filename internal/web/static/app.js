@@ -50,7 +50,7 @@
     $('crumbs').textContent = 'mapping every directory under ~ … (the list below is already usable)';
     job('/api/tree/build', async () => { await loadTree(null); $('fullmap').disabled = false; });
   }
-  let homeBytes = 0, homeFiles = 0;
+  let homeBytes = 0, homeFiles = 0, diskTotal = 0, diskFree = 0;
 
   async function loadTree(path) {
     const q = new URLSearchParams({ depth: 5, limit: 64 });
@@ -58,7 +58,7 @@
     const r = await fetch('/api/tree?' + q, { headers: H });
     if (!r.ok) { if (path) return loadTree(null); return; }
     const d = await r.json();
-    fullMap = d.full; tree = d.root; homeBytes = d.home_bytes; homeFiles = d.home_files;
+    fullMap = d.full; tree = d.root; homeBytes = d.home_bytes; homeFiles = d.home_files; diskTotal = d.disk_total || 0; diskFree = d.disk_free || 0;
     draw();
   }
 
@@ -104,45 +104,54 @@
     text(-6, 12, name);
     text(12, 14, fmt(tree.bytes));
     if (tree.path !== (report && report.home)) text(28, 10, '↑ click to go up', 'var(--dim)');
+    const MIN = 0.004;
+    const sector = (depth, a, b, fill, opacity, title, onEnter, onClick) => {
+      const path = document.createElementNS(svg.namespaceURI, 'path');
+      path.setAttribute('d', arc(R0 + (depth - 1) * band, R0 + depth * band - 1, a, b));
+      path.setAttribute('fill', fill);
+      if (opacity) path.setAttribute('opacity', opacity);
+      if (depth >= 3) path.setAttribute('stroke-width', '0.5');
+      path.onmouseenter = onEnter; path.onclick = onClick;
+      const t = document.createElementNS(svg.namespaceURI, 'title'); t.textContent = title; path.appendChild(t);
+      svg.appendChild(path);
+    };
     const walk = (node, depth, a0, a1, inherited) => {
       if (depth > DEPTH || !node.children) return;
       let a = a0;
       const span = a1 - a0;
+      const total = node.bytes || 1;
       const kids = node.children.slice().sort((x, y) => y.bytes - x.bytes);
+      let tiny = 0, tinyN = 0, kidsSum = 0;
       kids.forEach((k, i) => {
-        const frac = k.bytes / (node.bytes || 1);
-        const b = a + span * frac;
+        kidsSum += k.bytes;
+        const w = span * (k.bytes / total);
         const v = verdictOf(k, inherited);
-        if (b - a > 0.004 && (!only || v)) {
-          const path = document.createElementNS(svg.namespaceURI, 'path');
-          path.setAttribute('d', arc(R0 + (depth - 1) * band, R0 + depth * band - 1, a, b));
-          path.setAttribute('fill', color(k, inherited, depth, i, kids.length));
-          if (only && !v) path.setAttribute('opacity', '0.15');
-          if (k.skipped) path.setAttribute('opacity', '0.35');
-          path.onmouseenter = () => showNode(k, inherited);
-          path.onclick = () => { if (k.children || fullMap) zoomTo(k.path); else showNode(k, inherited, true); };
-          const title = document.createElementNS(svg.namespaceURI, 'title');
-          title.textContent = `${k.name} — ${fmt(k.bytes)}${v ? ' — ' + v : ''}${k.skipped ? ' — not mapped (cloud storage or another volume)' : ''}`;
-          path.appendChild(title);
-          svg.appendChild(path);
+        if (w <= MIN) { tiny += k.bytes; tinyN++; return; } // merged below, no gap
+        const b = a + w;
+        if (!only || v) {
+          sector(depth, a, b, color(k, inherited, depth, i, kids.length), only && !v ? '0.15' : k.skipped ? '0.35' : '',
+            `${k.name} — ${fmt(k.bytes)}${v ? ' — ' + v : ''}${k.skipped ? ' — not mapped (cloud storage or another volume)' : ''}`,
+            () => showNode(k, inherited),
+            () => { if (k.children || fullMap) zoomTo(k.path); else showNode(k, inherited, true); });
         }
         walk(k, depth + 1, a, b, v);
         a = b;
       });
-      // Children folded by the server (beyond the per-node limit) become one grey sector.
-      if (node.other && !only) {
-        const b = a + span * (node.other / (node.bytes || 1));
-        if (b - a > 0.004) {
-          const path = document.createElementNS(svg.namespaceURI, 'path');
-          path.setAttribute('d', arc(R0 + (depth - 1) * band, R0 + depth * band - 1, a, b));
-          path.setAttribute('fill', 'var(--line)');
-          path.onmouseenter = () => showOther(node);
-          path.onclick = () => zoomTo(node.path);
-          const title = document.createElementNS(svg.namespaceURI, 'title');
-          title.textContent = `${node.other_n} smaller items — ${fmt(node.other)} (click to zoom in)`;
-          path.appendChild(title);
-          svg.appendChild(path);
-        }
+      // Small children (drawn individually they would be hairlines) plus the
+      // ones the server folded: one grey sector, zoomable.
+      const small = tiny + (node.other || 0), smallN = tinyN + (node.other_n || 0);
+      if (small > 0 && !only) {
+        const b = a + span * (small / total);
+        if (b - a > 0.0005) sector(depth, a, b, 'var(--line)', '', `${smallN} smaller items — ${fmt(small)} (click to zoom in)`,
+          () => showOther({ path: node.path, other: small, other_n: smallN }), () => zoomTo(node.path));
+        a = b;
+      }
+      // Files stored directly in this directory: the part no child explains.
+      const loose = total - kidsSum - (node.other || 0);
+      if (loose > 0 && !only) {
+        const b = a + span * (loose / total);
+        if (b - a > 0.0005) sector(depth, a, b, 'var(--loose)', '', `files directly in ${node.name} — ${fmt(loose)}`,
+          () => showLoose(node, loose), () => zoomTo(node.path));
       }
     };
     walk(tree, 1, 0, 2 * Math.PI, tree.verdict);
@@ -164,7 +173,12 @@
     let acc = home;
     for (const p of parts) { acc += '/' + p; nav.appendChild(document.createTextNode(' / ')); nav.appendChild(mk(p, acc)); }
     const s = document.createElement('span');
-    s.textContent = `   — ${fmt(tree.bytes)} here, ${fmt(homeBytes)} in ~ (${homeFiles.toLocaleString()} files)`;
+    let txt = `   — ${fmt(tree.bytes)} here, ${fmt(homeBytes)} in ~ (${homeFiles.toLocaleString()} files)`;
+    if (diskTotal) {
+      const used = diskTotal - diskFree;
+      txt += `. Disk: ${fmt(used)} used of ${fmt(diskTotal)}, ${fmt(diskFree)} free; ~ is ${Math.round(homeBytes / used * 100)}% of what is used, the rest is the system, applications and other users, which macsweep never touches.`;
+    }
+    s.textContent = txt;
     nav.appendChild(s);
   }
 
@@ -197,6 +211,13 @@
     $('p-explain').hidden = node.path.includes('://');
     $('p-explain').onclick = () => explain(node.path);
     $('p-explanation').hidden = true;
+  }
+  function showLoose(node, bytes) {
+    $('p-name').textContent = `files directly in ${node.name}`;
+    $('p-path').textContent = display(node.path);
+    $('p-size').textContent = `${fmt(bytes)} in files that sit in this directory itself rather than in a subdirectory`;
+    $('p-verdict').textContent = ''; $('p-note').textContent = ''; $('p-recovery').textContent = '';
+    $('p-reasons').innerHTML = ''; $('p-mark').hidden = true; $('p-explain').hidden = true; $('p-explanation').hidden = true;
   }
   function showOther(node) {
     $('p-name').textContent = `${node.other_n} smaller items`;

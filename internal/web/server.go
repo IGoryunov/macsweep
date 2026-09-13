@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/IGoryunov/macsweep/internal/analyze"
@@ -345,7 +346,9 @@ func (s *Server) handleTree(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "path not in map", http.StatusNotFound)
 		return
 	}
-	writeJSON(w, map[string]any{"full": true, "home_bytes": tree.Bytes, "home_files": tree.Files, "root": toTreeNode(root, depth, limit, verdicts, s.deps.Env.Home)})
+	total, free := diskUsage(s.deps.Env.Home)
+	writeJSON(w, map[string]any{"full": true, "home_bytes": tree.Bytes, "home_files": tree.Files,
+		"disk_total": total, "disk_free": free, "root": toTreeNode(root, depth, limit, verdicts, s.deps.Env.Home)})
 }
 
 func toTreeNode(n *scan.Node, depth, limit int, verdicts map[string]report.Candidate, home string) *treeNode {
@@ -500,3 +503,12 @@ func (s *Server) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 
 // ErrServerClosed is what Start's error channel yields after a clean shutdown.
 var ErrServerClosed = http.ErrServerClosed
+
+// diskUsage returns the size and available space of the volume holding path.
+func diskUsage(path string) (total, free uint64) {
+	var st syscall.Statfs_t
+	if err := syscall.Statfs(path, &st); err != nil {
+		return 0, 0
+	}
+	return uint64(st.Bsize) * st.Blocks, uint64(st.Bsize) * st.Bavail
+}
