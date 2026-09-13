@@ -1,0 +1,147 @@
+version: 1
+group: Toolchains
+
+rules:
+  - id: npm-cache
+    paths: ["~/.npm/_cacache"]
+    verdict: safe
+    note: npm package download cache
+    recovery: re-downloaded on the next npm install
+
+  - id: pnpm-cache
+    paths: ["$CA/pnpm", "~/.pnpm-state"]
+    verdict: safe
+    note: pnpm metadata cache
+    recovery: re-downloaded on the next pnpm install
+
+  - id: pnpm-store
+    paths: ["~/Library/pnpm/store"]
+    verdict: safe
+    note: pnpm content-addressable store; node_modules link into it
+    recovery: pnpm install re-fetches what projects need
+
+  - id: yarn-cache
+    paths: ["$CA/Yarn", "~/.yarn/berry/cache"]
+    verdict: safe
+    note: Yarn package cache
+    recovery: re-downloaded on the next yarn install
+
+  - id: homebrew-cache
+    paths: ["$CA/Homebrew"]
+    verdict: safe
+    note: downloaded Homebrew bottles and sources
+    recovery: re-downloaded on the next brew install or upgrade
+
+  - id: pip-cache
+    paths: ["$CA/pip", "~/.pip/cache"]
+    verdict: safe
+    note: pip wheel and HTTP cache
+    recovery: re-downloaded on the next pip install
+
+  - id: xdg-cache
+    paths: ["~/.cache"]
+    verdict: safe
+    note: shared cache directory used by CLI tools (huggingface, pre-commit, uv, etc.)
+    recovery: each tool recreates its cache on demand
+
+  - id: node-gyp-cache
+    paths: ["~/.node-gyp"]
+    verdict: safe
+    note: Node.js headers downloaded for native module builds
+    recovery: re-downloaded when a native module is rebuilt
+
+  - id: nuget-packages
+    paths: ["~/.nuget/packages"]
+    verdict: safe
+    note: NuGet global package cache
+    recovery: dotnet restore re-downloads packages
+
+  - id: cargo-registry
+    paths: ["~/.cargo/registry"]
+    verdict: safe
+    note: Cargo crate registry cache and sources
+    recovery: cargo build re-downloads crates
+
+  - id: go-module-cache
+    paths: ["~/go/pkg/mod"]
+    verdict: safe
+    note: Go module cache (files are read-only, Trash still works)
+    recovery: go build re-downloads modules; or run go clean -modcache
+
+  - id: terraform-plugin-cache
+    paths: ["~/.terraform.d/plugin-cache"]
+    verdict: safe
+    note: Terraform provider plugin cache
+    recovery: terraform init re-downloads providers
+
+  - id: platformio-cache
+    paths: ["~/.platformio/.cache"]
+    verdict: safe
+    note: PlatformIO download cache
+    recovery: re-downloaded on demand
+
+  - id: swiftpm-cache
+    paths: ["~/.swiftpm/cache", "$CA/org.swift.swiftpm"]
+    verdict: safe
+    note: Swift Package Manager cache
+    recovery: resolved again on the next build
+
+  - id: cocoapods-cache
+    paths: ["$CA/CocoaPods"]
+    verdict: safe
+    note: CocoaPods spec repo and pod cache
+    recovery: pod install re-downloads
+
+  - id: gradle-caches
+    paths: ["~/.gradle/caches"]
+    verdict: safe
+    note: Gradle dependency and build caches
+    recovery: re-downloaded on the next Gradle build
+
+  - id: gradle-wrapper
+    paths: ["~/.gradle/wrapper"]
+    verdict: safe
+    note: downloaded Gradle distributions
+    recovery: gradlew re-downloads the required version
+
+  - id: maven-repository
+    paths: ["~/.m2/repository"]
+    verdict: review
+    note: local Maven repository; offline builds depend on it
+    recovery: mvn re-downloads dependencies when online
+
+  - id: nvm-cache
+    paths: ["~/.nvm/.cache"]
+    verdict: safe
+    note: nvm download and source-build cache
+    recovery: re-downloaded on the next nvm install
+
+  - id: nvm-versions
+    paths: ["~/.nvm/versions"]
+    verdict: review
+    note: installed Node.js versions; keep the ones you use
+    recovery: nvm install <version>
+
+  - id: sdkman-candidates
+    paths: ["~/.sdkman/candidates"]
+    verdict: review
+    note: JDKs and tools installed via SDKMAN; keep the ones you use
+    recovery: sdk install <candidate> <version>
+
+  - id: vscode-extensions
+    paths: ["~/.vscode/extensions"]
+    verdict: review
+    note: VS Code extensions
+    recovery: reinstall extensions from the marketplace
+
+  - id: cursor-extensions
+    paths: ["~/.cursor/extensions"]
+    verdict: review
+    note: Cursor extensions
+    recovery: reinstall extensions from the marketplace
+
+  - id: platformio-home
+    paths: ["~/.platformio"]
+    verdict: review
+    note: whole PlatformIO installation including toolchains
+    recovery: reinstall PlatformIO

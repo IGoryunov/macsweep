@@ -1,0 +1,27 @@
+version: 1
+group: Docker
+
+rules:
+  - id: docker-vm-disk
+    paths: ["$CT/com.docker.docker/Data/vms/0/data/Docker.raw"]
+    verdict: keep
+    note: Docker Desktop virtual machine disk; shrink it with `docker system prune -a` and the disk size setting in Docker Desktop, do not delete the file
+    recovery: not applicable
+
+  - id: docker-cache
+    paths: ["$CA/com.docker.docker"]
+    verdict: safe
+    note: Docker Desktop cache
+    recovery: rebuilt on next launch
+
+  - id: docker-config
+    paths: ["~/.docker"]
+    verdict: review
+    note: Docker CLI configuration, contexts and plugins
+    recovery: reconfigure contexts and reinstall CLI plugins
+
+  - id: colima-lima
+    paths: ["~/.colima", "~/.lima"]
+    verdict: review
+    note: Colima/Lima virtual machines and their disks
+    recovery: recreate the VM; containers and images inside are lost

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>macsweep</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>macsweep</h1>
+  <div id="totals" class="totals">scanning…</div>
+  <div class="actions">
+    <button id="rescan" disabled>Rescan</button>
+    <button id="fullmap" disabled title="Walk all of ~ again and rebuild the map">Remap</button>
+    <label class="check"><input type="checkbox" id="onlyverdicts"> only rule candidates</label>
+  </div>
+</header>
+<div id="progress" class="progress"><span id="spinner">◐</span> <span id="progress-text">starting scan…</span></div>
+<main>
+  <section class="chart">
+    <nav id="crumbs" class="crumbs"></nav>
+    <svg id="sunburst" viewBox="-320 -320 640 640" role="img" aria-label="disk usage sunburst"></svg>
+    <div class="legend"><span class="sw safe"></span>safe <span class="sw review"></span>review <span class="sw keep"></span>keep <span class="sw none"></span>no rule <span class="sw other"></span>smaller items</div>
+  </section>
+  <aside id="panel" class="panel">
+    <h2 id="p-name">Hover a sector for details, click to zoom in</h2>
+    <div id="p-path" class="mono"></div>
+    <div id="p-size"></div>
+    <div id="p-verdict"></div>
+    <div id="p-note"></div>
+    <div id="p-recovery"></div>
+    <ul id="p-reasons"></ul>
+    <div class="panel-actions">
+      <button id="p-mark" hidden>Mark for Trash</button>
+      <button id="p-explain" hidden>Explain</button>
+    </div>
+    <pre id="p-explanation" class="mono" hidden></pre>
+  </aside>
+</main>
+<section id="marked" class="marked">
+  <h2>Marked for the Trash <span id="m-total"></span></h2>
+  <ul id="m-list"></ul>
+  <button id="m-trash" disabled>Move to Trash…</button>
+  <span id="m-result"></span>
+</section>
+<section class="candidates">
+  <h2>Candidates by group</h2>
+  <div id="groups"></div>
+</section>
+<footer>Nothing changes without your confirmation. Everything goes to the Finder Trash; Put Back restores it. This page talks only to 127.0.0.1 and closes the server when you leave.</footer>
+<script src="app.js"></script>
+</body>
+</html>

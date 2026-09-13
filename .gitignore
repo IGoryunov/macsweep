@@ -1,0 +1,7 @@
+/macsweep
+/dist/
+*.test
+*.out
+.DS_Store
+.idea/
+/docs/

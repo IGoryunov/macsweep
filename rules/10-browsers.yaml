@@ -1,0 +1,103 @@
+version: 1
+group: Browsers
+
+rules:
+  - id: chrome-cache
+    paths: ["$CA/Google/Chrome"]
+    verdict: safe
+    note: Chrome disk cache
+    recovery: rebuilt while browsing
+
+  - id: chrome-snapshots
+    paths: ["$AS/Google/Chrome/Snapshots"]
+    verdict: safe
+    note: copies of previous Chrome versions kept for rollback
+    recovery: Chrome recreates snapshots on the next update
+
+  - id: google-updater
+    paths: ["$AS/GoogleUpdater"]
+    verdict: safe
+    note: downloaded Google updates
+    recovery: re-downloaded when an update is available
+
+  - id: chrome-profile-code-cache
+    glob: "$AS/Google/Chrome/*/Code Cache"
+    prune: true
+    verdict: safe
+    note: compiled JavaScript cache of a Chrome profile
+    recovery: rebuilt while browsing
+
+  - id: chrome-profile-gpu-cache
+    glob: "$AS/Google/Chrome/*/GPUCache"
+    prune: true
+    verdict: safe
+    note: GPU shader cache of a Chrome profile
+    recovery: rebuilt while browsing
+
+  - id: chrome-profile-service-worker-cache
+    glob: "$AS/Google/Chrome/*/Service Worker/CacheStorage"
+    prune: true
+    verdict: safe
+    note: service worker cache storage of a Chrome profile
+    recovery: sites refill it on the next visit
+
+  - id: chrome-profile-service-worker-scripts
+    glob: "$AS/Google/Chrome/*/Service Worker/ScriptCache"
+    prune: true
+    verdict: safe
+    note: service worker script cache of a Chrome profile
+    recovery: sites refill it on the next visit
+
+  - id: chrome-profile-dawn-cache
+    glob: "$AS/Google/Chrome/*/DawnGraphiteCache"
+    prune: true
+    verdict: safe
+    note: WebGPU shader cache of a Chrome profile
+    recovery: rebuilt while browsing
+
+  - id: chrome-profile-dawn-webgpu-cache
+    glob: "$AS/Google/Chrome/*/DawnWebGPUCache"
+    prune: true
+    verdict: safe
+    note: WebGPU shader cache of a Chrome profile
+    recovery: rebuilt while browsing
+
+  - id: chrome-profile-shader-cache
+    glob: "$AS/Google/Chrome/*/GrShaderCache"
+    prune: true
+    verdict: safe
+    note: Skia shader cache of a Chrome profile
+    recovery: rebuilt while browsing
+
+  - id: chrome-profile-shared-dictionary
+    glob: "$AS/Google/Chrome/*/Shared Dictionary"
+    prune: true
+    verdict: safe
+    note: compression dictionaries downloaded by a Chrome profile
+    recovery: re-downloaded on demand
+
+  - id: chrome-on-device-model
+    paths: ["$AS/Google/Chrome/OptGuideOnDeviceModel"]
+    verdict: safe
+    note: on-device AI model downloaded by Chrome
+    recovery: Chrome downloads it again when a feature needs it
+
+  - id: chrome-profile-file-system
+    glob: "$AS/Google/Chrome/*/File System"
+    prune: true
+    verdict: review
+    note: site data (File System API) of a Chrome profile
+    recovery: sites may store user content here; clear per-site via chrome://settings/content/all
+
+  - id: chrome-profile-indexeddb
+    glob: "$AS/Google/Chrome/*/IndexedDB"
+    prune: true
+    verdict: review
+    note: site databases (IndexedDB) of a Chrome profile
+    recovery: sites may store user content here; clear per-site via chrome://settings/content/all
+
+  - id: other-browser-caches
+    paths: ["$CA/Firefox", "$CA/BraveSoftware", "$CA/Microsoft Edge", "$CA/Arc", "$CA/Vivaldi", "$CA/com.operasoftware.Opera"]
+    verdict: safe
+    note: browser disk cache
+    recovery: rebuilt while browsing

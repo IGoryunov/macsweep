@@ -1,0 +1,60 @@
+version: 1
+group: System
+
+rules:
+  - id: app-caches
+    glob: "$CA/*"
+    prune: true
+    verdict: safe
+    note: per-application cache directory
+    recovery: the application rebuilds its cache on next launch
+
+  - id: app-logs
+    paths: ["$LOGS"]
+    verdict: safe
+    note: application log files
+    recovery: applications recreate logs as they run
+
+  - id: sandbox-caches
+    glob: "$CT/*/Data/Library/Caches"
+    prune: true
+    verdict: safe
+    note: cache directory of a sandboxed (App Store) application
+    recovery: the application rebuilds its cache on next launch
+
+  - id: group-container-caches
+    glob: "$GC/*/Library/Caches"
+    prune: true
+    verdict: safe
+    note: cache directory of an app group container
+    recovery: the application rebuilds its cache on next launch
+
+  - id: wallpaper-videos
+    paths: ["$AS/com.apple.wallpaper"]
+    verdict: safe
+    note: downloaded aerial and video wallpapers
+    recovery: macOS downloads them again when selected
+
+  - id: mobilesync-backups
+    paths: ["$AS/MobileSync/Backup"]
+    verdict: review
+    note: local iPhone and iPad backups
+    recovery: make a new backup via Finder; old backups cannot be recreated
+
+  - id: google-drive-cache
+    paths: ["$AS/Google/DriveFS"]
+    verdict: keep
+    note: Google Drive local cache and pending uploads; clear it from the app (Settings → Clear cache), not by deleting files
+    recovery: Google Drive re-syncs; canceled_uploads may hold files that never reached the cloud
+
+  - id: mail
+    paths: ["~/Library/Mail"]
+    verdict: keep
+    note: local mail store
+    recovery: not applicable
+
+  - id: messages
+    paths: ["~/Library/Messages"]
+    verdict: keep
+    note: iMessage history and attachments
+    recovery: not applicable

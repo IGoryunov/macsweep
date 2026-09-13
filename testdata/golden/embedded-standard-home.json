@@ -1,0 +1,255 @@
+{
+  "schema_version": 1,
+  "generated_at": "0001-01-01T00:00:00Z",
+  "home": "~",
+  "project_roots": [
+    "~/Work",
+    "~/Documents"
+  ],
+  "from_cache": false,
+  "groups": [
+    {
+      "name": "JetBrains",
+      "safe_bytes": 28672,
+      "review_bytes": 8192,
+      "keep_bytes": 0,
+      "candidates": [
+        {
+          "rule_id": "jetbrains-caches",
+          "path": "~/Library/Caches/JetBrains",
+          "display_path": "~/Library/Caches/JetBrains",
+          "bytes": 24576,
+          "files": 5,
+          "mod_time": "0001-01-01T00:00:00Z",
+          "root_mod_time": "0001-01-01T00:00:00Z",
+          "dev": 0,
+          "ino": 0,
+          "verdict": "safe",
+          "reasons": [
+            "rule default: IDE indexes and caches for all JetBrains IDE versions"
+          ],
+          "blocked": "",
+          "note": "IDE indexes and caches for all JetBrains IDE versions",
+          "recovery": "rebuilt automatically when a project is next opened",
+          "owner_app": "",
+          "nested_in": ""
+        },
+        {
+          "rule_id": "jetbrains-orphan-config",
+          "path": "~/Library/Application Support/JetBrains/GoLand2023.3",
+          "display_path": "~/Library/Application Support/JetBrains/GoLand2023.3",
+          "bytes": 4096,
+          "files": 1,
+          "mod_time": "0001-01-01T00:00:00Z",
+          "root_mod_time": "0001-01-01T00:00:00Z",
+          "dev": 0,
+          "ino": 0,
+          "verdict": "review",
+          "reasons": [
+            "rule default: IDE settings and plugins for one IDE version"
+          ],
+          "blocked": "",
+          "note": "IDE settings and plugins for one IDE version",
+          "recovery": "reinstall plugins and re-import settings from a backup",
+          "owner_app": "",
+          "nested_in": ""
+        },
+        {
+          "rule_id": "jetbrains-orphan-config",
+          "path": "~/Library/Application Support/JetBrains/PyCharm2024.1",
+          "display_path": "~/Library/Application Support/JetBrains/PyCharm2024.1",
+          "bytes": 4096,
+          "files": 1,
+          "mod_time": "0001-01-01T00:00:00Z",
+          "root_mod_time": "0001-01-01T00:00:00Z",
+          "dev": 0,
+          "ino": 0,
+          "verdict": "safe",
+          "reasons": [
+            "rule default: IDE settings and plugins for one IDE version",
+            "IDE is not installed, this configuration is orphaned"
+          ],
+          "blocked": "",
+          "note": "IDE settings and plugins for one IDE version",
+          "recovery": "reinstall plugins and re-import settings from a backup",
+          "owner_app": "",
+          "nested_in": ""
+        },
+        {
+          "rule_id": "jetbrains-orphan-config",
+          "path": "~/Library/Application Support/JetBrains/Unknown2024.1",
+          "display_path": "~/Library/Application Support/JetBrains/Unknown2024.1",
+          "bytes": 4096,
+          "files": 1,
+          "mod_time": "0001-01-01T00:00:00Z",
+          "root_mod_time": "0001-01-01T00:00:00Z",
+          "dev": 0,
+          "ino": 0,
+          "verdict": "review",
+          "reasons": [
+            "rule default: IDE settings and plugins for one IDE version",
+            "predicate app_installed unavailable: app name \"Unknown\" not in map"
+          ],
+          "blocked": "",
+          "note": "IDE settings and plugins for one IDE version",
+          "recovery": "reinstall plugins and re-import settings from a backup",
+          "owner_app": "",
+          "nested_in": ""
+        }
+      ]
+    },
+    {
+      "name": "Toolchains",
+      "safe_bytes": 20480,
+      "review_bytes": 0,
+      "keep_bytes": 0,
+      "candidates": [
+        {
+          "rule_id": "xdg-cache",
+          "path": "~/.cache",
+          "display_path": "~/.cache",
+          "bytes": 12288,
+          "files": 2,
+          "mod_time": "0001-01-01T00:00:00Z",
+          "root_mod_time": "0001-01-01T00:00:00Z",
+          "dev": 0,
+          "ino": 0,
+          "verdict": "safe",
+          "reasons": [
+            "rule default: shared cache directory used by CLI tools (huggingface, pre-commit, uv, etc.)"
+          ],
+          "blocked": "",
+          "note": "shared cache directory used by CLI tools (huggingface, pre-commit, uv, etc.)",
+          "recovery": "each tool recreates its cache on demand",
+          "owner_app": "",
+          "nested_in": ""
+        },
+        {
+          "rule_id": "pnpm-store",
+          "path": "~/Library/pnpm/store",
+          "display_path": "~/Library/pnpm/store",
+          "bytes": 8192,
+          "files": 1,
+          "mod_time": "0001-01-01T00:00:00Z",
+          "root_mod_time": "0001-01-01T00:00:00Z",
+          "dev": 0,
+          "ino": 0,
+          "verdict": "safe",
+          "reasons": [
+            "rule default: pnpm content-addressable store; node_modules link into it"
+          ],
+          "blocked": "",
+          "note": "pnpm content-addressable store; node_modules link into it",
+          "recovery": "pnpm install re-fetches what projects need",
+          "owner_app": "",
+          "nested_in": ""
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "safe_bytes": 8192,
+      "review_bytes": 4096,
+      "keep_bytes": 0,
+      "candidates": [
+        {
+          "rule_id": "project-node-modules",
+          "path": "~/Work/old/node_modules",
+          "display_path": "~/Work/old/node_modules",
+          "bytes": 12288,
+          "files": 2,
+          "mod_time": "0001-01-01T00:00:00Z",
+          "root_mod_time": "0001-01-01T00:00:00Z",
+          "dev": 0,
+          "ino": 0,
+          "verdict": "safe",
+          "reasons": [
+            "rule default: installed npm dependencies of a project",
+            "not modified for more than 60 days"
+          ],
+          "blocked": "",
+          "note": "installed npm dependencies of a project",
+          "recovery": "npm install (or pnpm/yarn install)",
+          "owner_app": "",
+          "nested_in": ""
+        },
+        {
+          "rule_id": "project-node-modules",
+          "path": "~/Work/fresh/node_modules",
+          "display_path": "~/Work/fresh/node_modules",
+          "bytes": 4096,
+          "files": 1,
+          "mod_time": "0001-01-01T00:00:00Z",
+          "root_mod_time": "0001-01-01T00:00:00Z",
+          "dev": 0,
+          "ino": 0,
+          "verdict": "review",
+          "reasons": [
+            "rule default: installed npm dependencies of a project"
+          ],
+          "blocked": "",
+          "note": "installed npm dependencies of a project",
+          "recovery": "npm install (or pnpm/yarn install)",
+          "owner_app": "",
+          "nested_in": ""
+        },
+        {
+          "rule_id": "project-target",
+          "path": "~/Work/lib/target",
+          "display_path": "~/Work/lib/target",
+          "bytes": 4096,
+          "files": 1,
+          "mod_time": "0001-01-01T00:00:00Z",
+          "root_mod_time": "0001-01-01T00:00:00Z",
+          "dev": 0,
+          "ino": 0,
+          "verdict": "safe",
+          "reasons": [
+            "rule default: Maven, Cargo or sbt build output",
+            "not modified for more than 60 days"
+          ],
+          "blocked": "",
+          "note": "Maven, Cargo or sbt build output",
+          "recovery": "rebuilt by the next build",
+          "owner_app": "",
+          "nested_in": ""
+        }
+      ]
+    },
+    {
+      "name": "Local AI models",
+      "safe_bytes": 0,
+      "review_bytes": 0,
+      "keep_bytes": 0,
+      "candidates": [
+        {
+          "rule_id": "huggingface-cache",
+          "path": "~/.cache/huggingface",
+          "display_path": "~/.cache/huggingface",
+          "bytes": 8192,
+          "files": 1,
+          "mod_time": "0001-01-01T00:00:00Z",
+          "root_mod_time": "0001-01-01T00:00:00Z",
+          "dev": 0,
+          "ino": 0,
+          "verdict": "safe",
+          "reasons": [
+            "rule default: Hugging Face hub cache (models, datasets)"
+          ],
+          "blocked": "",
+          "note": "Hugging Face hub cache (models, datasets)",
+          "recovery": "re-downloaded on first use",
+          "owner_app": "",
+          "nested_in": "~/.cache"
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "safe_bytes": 57344,
+    "review_bytes": 12288,
+    "keep_bytes": 0,
+    "candidates": 10
+  },
+  "warnings": []
+}

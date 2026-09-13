@@ -1,0 +1,87 @@
+version: 1
+group: Mobile development
+
+rules:
+  - id: xcode-derived-data
+    paths: ["$DEV/Xcode/DerivedData"]
+    verdict: safe
+    note: Xcode build intermediates and indexes
+    recovery: rebuilt on the next build
+
+  - id: xcode-device-support
+    paths: ["$DEV/Xcode/iOS DeviceSupport", "$DEV/Xcode/watchOS DeviceSupport", "$DEV/Xcode/tvOS DeviceSupport"]
+    verdict: safe
+    note: debug symbols for previously connected device OS versions
+    recovery: re-downloaded when a device with that OS version is connected
+
+  - id: xcode-archives
+    paths: ["$DEV/Xcode/Archives"]
+    verdict: review
+    note: app archives (.xcarchive) with dSYMs needed to symbolicate released builds
+    recovery: cannot be recreated for already shipped builds
+
+  - id: xcode-products
+    paths: ["$DEV/Xcode/Products"]
+    verdict: safe
+    note: exported build products
+    recovery: rebuilt on the next archive/export
+
+  - id: xcode-cache
+    paths: ["$CA/com.apple.dt.Xcode"]
+    verdict: safe
+    note: Xcode cache
+    recovery: rebuilt on next launch
+
+  - id: simulator-devices
+    paths: ["$DEV/CoreSimulator/Devices"]
+    verdict: review
+    note: iOS/watchOS/tvOS simulator devices and their data
+    recovery: run `xcrun simctl delete unavailable` first; Xcode recreates default simulators
+
+  - id: simulator-caches
+    paths: ["$DEV/CoreSimulator/Caches"]
+    verdict: safe
+    note: simulator runtime caches
+    recovery: rebuilt when a simulator boots
+
+  - id: xctest-devices
+    paths: ["$DEV/XCTestDevices"]
+    verdict: safe
+    note: simulators cloned for parallel testing
+    recovery: recreated by the next test run
+
+  - id: android-system-images
+    paths: ["~/Library/Android/sdk/system-images"]
+    verdict: review
+    note: Android emulator system images
+    recovery: re-download from SDK Manager
+
+  - id: android-ndk
+    paths: ["~/Library/Android/sdk/ndk"]
+    verdict: review
+    note: Android NDK versions
+    recovery: re-download from SDK Manager
+
+  - id: android-sources
+    paths: ["~/Library/Android/sdk/sources"]
+    verdict: safe
+    note: Android framework sources used only for IDE navigation
+    recovery: re-download from SDK Manager
+
+  - id: android-avd
+    paths: ["~/.android/avd"]
+    verdict: review
+    note: Android virtual devices and their disk images
+    recovery: recreate devices in AVD Manager
+
+  - id: kotlin-native
+    paths: ["~/.konan"]
+    verdict: safe
+    note: Kotlin/Native toolchains and dependencies
+    recovery: re-downloaded on the next Kotlin/Native build
+
+  - id: jvm-native-caches
+    paths: ["~/.skiko", "~/.javacpp", "~/.hawtjni"]
+    verdict: safe
+    note: extracted native libraries of JVM tools
+    recovery: re-extracted on next launch

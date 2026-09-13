@@ -1,0 +1,39 @@
+version: 1
+group: Local AI models
+
+rules:
+  - id: ollama-models
+    paths: ["~/.ollama/models"]
+    verdict: review
+    note: downloaded Ollama models
+    recovery: ollama pull <model>
+
+  - id: lm-studio
+    paths: ["~/.lmstudio"]
+    verdict: review
+    note: LM Studio models and settings
+    recovery: re-download models in LM Studio
+
+  - id: lm-studio-cache
+    paths: ["~/.cache/lm-studio"]
+    verdict: safe
+    note: LM Studio cache
+    recovery: rebuilt on next launch
+
+  - id: jan
+    paths: ["$AS/Jan", "$AS/com.electron.jan"]
+    verdict: review
+    note: Jan application data including GGUF models
+    recovery: re-download models in Jan
+
+  - id: huggingface-cache
+    paths: ["~/.cache/huggingface"]
+    verdict: safe
+    note: Hugging Face hub cache (models, datasets)
+    recovery: re-downloaded on first use
+
+  - id: voiceink-models
+    paths: ["$AS/com.prakashjoshipax.VoiceInk", "~/VoiceInk", "~/VoiceInk-Dependencies"]
+    verdict: review
+    note: VoiceInk Whisper models and dependencies
+    recovery: re-download in VoiceInk

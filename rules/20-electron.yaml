@@ -1,0 +1,73 @@
+version: 1
+group: Electron apps
+
+rules:
+  - id: electron-cache
+    glob: "$AS/*/Cache"
+    prune: true
+    verdict: safe
+    note: HTTP cache of an Electron or Chromium-based application
+    recovery: rebuilt on next launch
+
+  - id: electron-code-cache
+    glob: "$AS/*/Code Cache"
+    prune: true
+    verdict: safe
+    note: compiled JavaScript cache of an Electron application
+    recovery: rebuilt on next launch
+
+  - id: electron-gpu-cache
+    glob: "$AS/*/GPUCache"
+    prune: true
+    verdict: safe
+    note: GPU shader cache of an Electron application
+    recovery: rebuilt on next launch
+
+  - id: electron-dawn-cache
+    glob: "$AS/*/DawnGraphiteCache"
+    prune: true
+    verdict: safe
+    note: WebGPU shader cache of an Electron application
+    recovery: rebuilt on next launch
+
+  - id: electron-dawn-webgpu-cache
+    glob: "$AS/*/DawnWebGPUCache"
+    prune: true
+    verdict: safe
+    note: WebGPU shader cache of an Electron application
+    recovery: rebuilt on next launch
+
+  - id: electron-crashpad
+    glob: "$AS/*/Crashpad"
+    prune: true
+    verdict: safe
+    note: crash reports collected by an Electron application
+    recovery: not needed unless you are debugging a crash
+
+  - id: electron-logs
+    glob: "$AS/*/logs"
+    prune: true
+    verdict: safe
+    note: log files of an Electron application
+    recovery: recreated as the application runs
+
+  - id: electron-logs-capitalised
+    glob: "$AS/*/Logs"
+    prune: true
+    verdict: safe
+    note: log files of an Electron application
+    recovery: recreated as the application runs
+
+  - id: electron-service-worker-cache
+    glob: "$AS/*/Service Worker/CacheStorage"
+    prune: true
+    verdict: safe
+    note: service worker cache of an Electron application
+    recovery: refilled on next launch
+
+  - id: electron-partitions
+    glob: "$AS/*/Partitions"
+    prune: true
+    verdict: review
+    note: per-partition web storage of an Electron application; may include local data
+    recovery: usually re-synced from the service, but verify for offline-first apps

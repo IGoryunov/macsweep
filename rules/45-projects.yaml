@@ -1,0 +1,134 @@
+version: 1
+group: Projects
+
+rules:
+  - id: project-node-modules
+    glob: "$PROJECTS/**/node_modules"
+    prune: true
+    verdict: review
+    note: installed npm dependencies of a project
+    recovery: npm install (or pnpm/yarn install)
+    when:
+      - if: mtime_older_than
+        args: { days: 60 }
+        then: safe
+        reason: not modified for more than 60 days
+
+  - id: project-python-venv
+    glob: "$PROJECTS/**/.venv"
+    prune: true
+    verdict: review
+    note: Python virtual environment
+    recovery: python -m venv .venv && pip install -r requirements.txt
+    when:
+      - if: mtime_older_than
+        args: { days: 60 }
+        then: safe
+        reason: not modified for more than 60 days
+
+  - id: project-python-venv-plain
+    glob: "$PROJECTS/**/venv"
+    prune: true
+    verdict: review
+    note: Python virtual environment
+    recovery: python -m venv venv && pip install -r requirements.txt
+    when:
+      - if: mtime_older_than
+        args: { days: 60 }
+        then: safe
+        reason: not modified for more than 60 days
+
+  - id: project-target
+    glob: "$PROJECTS/**/target"
+    prune: true
+    verdict: review
+    note: Maven, Cargo or sbt build output
+    recovery: rebuilt by the next build
+    when:
+      - if: mtime_older_than
+        args: { days: 60 }
+        then: safe
+        reason: not modified for more than 60 days
+
+  - id: project-next
+    glob: "$PROJECTS/**/.next"
+    prune: true
+    verdict: review
+    note: Next.js build output
+    recovery: next build
+    when:
+      - if: mtime_older_than
+        args: { days: 60 }
+        then: safe
+        reason: not modified for more than 60 days
+
+  - id: project-nuxt
+    glob: "$PROJECTS/**/.nuxt"
+    prune: true
+    verdict: review
+    note: Nuxt build output
+    recovery: nuxt build
+    when:
+      - if: mtime_older_than
+        args: { days: 60 }
+        then: safe
+        reason: not modified for more than 60 days
+
+  - id: project-gradle
+    glob: "$PROJECTS/**/.gradle"
+    prune: true
+    verdict: review
+    note: per-project Gradle cache
+    recovery: rebuilt by the next Gradle build
+    when:
+      - if: mtime_older_than
+        args: { days: 60 }
+        then: safe
+        reason: not modified for more than 60 days
+
+  - id: project-pycache
+    glob: "$PROJECTS/**/__pycache__"
+    prune: true
+    verdict: safe
+    note: compiled Python bytecode
+    recovery: regenerated when Python runs
+
+  - id: project-pytest-cache
+    glob: "$PROJECTS/**/.pytest_cache"
+    prune: true
+    verdict: safe
+    note: pytest cache
+    recovery: regenerated on the next test run
+
+  - id: project-mypy-cache
+    glob: "$PROJECTS/**/.mypy_cache"
+    prune: true
+    verdict: safe
+    note: mypy incremental cache
+    recovery: regenerated on the next mypy run
+
+  - id: project-angular-cache
+    glob: "$PROJECTS/**/.angular"
+    prune: true
+    verdict: safe
+    note: Angular CLI build cache
+    recovery: rebuilt by the next ng build/serve
+
+  - id: project-turbo-cache
+    glob: "$PROJECTS/**/.turbo"
+    prune: true
+    verdict: safe
+    note: Turborepo cache
+    recovery: rebuilt by the next turbo run
+
+  - id: project-dist
+    glob: "$PROJECTS/**/dist"
+    prune: true
+    verdict: review
+    note: build output directory
+    recovery: rebuilt by the project's build command
+    when:
+      - if: mtime_older_than
+        args: { days: 60 }
+        then: safe
+        reason: not modified for more than 60 days

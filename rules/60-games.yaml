@@ -1,0 +1,51 @@
+version: 1
+group: Games and Windows
+
+rules:
+  - id: steam-client
+    paths: ["$AS/Steam"]
+    verdict: review
+    note: Steam client and installed games
+    recovery: reinstall Steam and re-download games
+
+  - id: steam-library
+    paths: ["~/SteamLibrary"]
+    verdict: review
+    note: Steam game library
+    recovery: re-download games from Steam
+
+  - id: steam-cache
+    paths: ["$CA/com.valvesoftware.steam"]
+    verdict: safe
+    note: Steam cache
+    recovery: rebuilt on next launch
+
+  - id: steam-logs
+    paths: ["$LOGS/Steam"]
+    verdict: safe
+    note: Steam logs
+    recovery: recreated as Steam runs
+
+  - id: crossover-bottles
+    paths: ["$AS/CrossOver"]
+    verdict: review
+    note: CrossOver bottles with installed Windows software
+    recovery: reinstall the Windows software into new bottles
+
+  - id: crossover-cache
+    paths: ["$CA/com.codeweavers.CrossOver"]
+    verdict: safe
+    note: CrossOver cache
+    recovery: rebuilt on next launch
+
+  - id: whisky-prefixes
+    paths: ["$AS/com.isaacmarovitz.Whisky"]
+    verdict: review
+    note: Whisky Wine prefixes with installed Windows software
+    recovery: reinstall the Windows software
+
+  - id: battle-net
+    paths: ["$AS/Battle.net", "$AS/Blizzard Entertainment"]
+    verdict: review
+    note: Battle.net client data
+    recovery: reinstall Battle.net

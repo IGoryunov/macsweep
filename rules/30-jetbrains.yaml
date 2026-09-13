@@ -1,0 +1,50 @@
+version: 1
+group: JetBrains
+
+rules:
+  - id: jetbrains-caches
+    paths: ["$CA/JetBrains"]
+    verdict: safe
+    note: IDE indexes and caches for all JetBrains IDE versions
+    recovery: rebuilt automatically when a project is next opened
+
+  - id: jetbrains-logs
+    paths: ["$LOGS/JetBrains"]
+    verdict: safe
+    note: IDE log files
+    recovery: recreated on next IDE start
+
+  - id: jetbrains-idea-snapshots
+    paths: ["~/IdeaSnapshots"]
+    verdict: safe
+    note: profiler snapshots saved by the IDE
+    recovery: not needed unless you are still analysing a snapshot
+
+  - id: jetbrains-orphan-config
+    glob: "$AS/JetBrains/*"
+    exclude: ["Toolbox", "consentOptions", "bl", "crl"]
+    verdict: review
+    note: IDE settings and plugins for one IDE version
+    recovery: reinstall plugins and re-import settings from a backup
+    when:
+      - if: not app_installed
+        args:
+          strip_version: '[0-9]{4}\.[0-9]+$'
+          map:
+            IntelliJIdea: IntelliJ IDEA
+            IdeaIC: IntelliJ IDEA CE
+            PyCharm: PyCharm
+            PyCharmCE: PyCharm CE
+            WebStorm: WebStorm
+            GoLand: GoLand
+            DataGrip: DataGrip
+            CLion: CLion
+            RustRover: RustRover
+            Rider: Rider
+            PhpStorm: PhpStorm
+            RubyMine: RubyMine
+            AndroidStudio: Android Studio
+            Fleet: Fleet
+            Aqua: Aqua
+        then: safe
+        reason: IDE is not installed, this configuration is orphaned
