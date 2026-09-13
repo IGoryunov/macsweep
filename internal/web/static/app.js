@@ -142,7 +142,7 @@
       const small = tiny + (node.other || 0), smallN = tinyN + (node.other_n || 0);
       if (small > 0 && !only) {
         const b = a + span * (small / total);
-        if (b - a > 0.0005) sector(depth, a, b, 'var(--line)', '', `${smallN} smaller items — ${fmt(small)} (click to zoom in)`,
+        if (b - a > 0.0005) sector(depth, a, b, 'var(--other)', '', `${smallN} smaller items — ${fmt(small)} (click to zoom in)`,
           () => showOther({ path: node.path, other: small, other_n: smallN }), () => zoomTo(node.path));
         a = b;
       }
