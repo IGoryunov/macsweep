@@ -138,6 +138,21 @@ System caches and logs, Browsers, Electron apps, JetBrains, Toolchains,
 Projects (build artifacts under your project roots), Mobile development,
 Docker, Games and Windows, Local AI models. See [`rules/`](rules/).
 
+## Personal rules and agents
+
+Rules you write for your own machine go to `~/.config/macsweep/rules.d/*.yaml`
+and are merged on top of the shipped ones: a rule with the same `id` overrides
+the embedded rule, new ids are added. `macsweep rules lint` validates them,
+`macsweep rules list` shows the effective set, `macsweep rules dir` prints the
+directory.
+
+You do not have to write them by hand. `macsweep agent-context` emits one JSON
+document with the rule schema, the current report and the largest directories
+no rule covers; [AGENTS.md](AGENTS.md) is the contract for an assistant such as
+Claude Code that turns those into personal rules, and
+`.claude/skills/macsweep-tune` is a ready skill for it. The assistant may write
+rules and ask questions; it never runs the cleanup.
+
 ## Adding a rule
 
 Rules are YAML files in [`rules/`](rules/), one group per file:

@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -161,5 +163,36 @@ func TestPattern(t *testing.T) {
 	}
 	if _, err := CompilePattern("/h/**/a/**"); err == nil {
 		t.Fatal("double ** should fail")
+	}
+}
+
+func TestMergeAndLoadUser(t *testing.T) {
+	base, _ := loadOne(t, "version: 1\ngroup: A\nrules:\n  - id: a\n    paths: ['~/x']\n    verdict: safe\n    note: base\n    recovery: r\n  - id: b\n    paths: ['~/y']\n    verdict: safe\n    note: n\n    recovery: r\n")
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "mine.yaml"), []byte("version: 1\ngroup: Mine\nrules:\n  - id: a\n    paths: ['~/x']\n    verdict: review\n    note: overridden\n    recovery: r\n  - id: c\n    paths: ['~/z']\n    verdict: keep\n    note: n\n    recovery: r\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	user, err := LoadUser(dir)
+	if err != nil || user == nil {
+		t.Fatalf("LoadUser: %v %v", err, user)
+	}
+	m := Merge(base, user)
+	if len(m.Rules) != 3 || m.Rules[0].ID != "a" || m.Rules[0].Verdict != Review || m.Rules[0].Note != "overridden" || m.Rules[2].ID != "c" {
+		t.Fatalf("merge: %+v", m.Rules)
+	}
+	if strings.Join(m.Groups, ",") != "A,Mine" {
+		t.Fatalf("groups: %v", m.Groups)
+	}
+	if c, ok := m.ByID("c"); !ok || c.Verdict != Keep {
+		t.Fatal("ByID after merge")
+	}
+	if u, err := LoadUser(filepath.Join(dir, "missing")); err != nil || u != nil {
+		t.Fatalf("missing dir must be nil, nil: %v %v", u, err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "bad.yaml"), []byte("version: 1\ngroup: X\nrules:\n  - id: q\n    verdict: nope\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadUser(dir); err == nil {
+		t.Fatal("invalid user rule must fail loading")
 	}
 }

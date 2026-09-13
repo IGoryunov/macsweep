@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/fs"
+	"os"
 	"path"
 	"sort"
 	"strings"
@@ -103,6 +104,62 @@ func Load(fsys fs.FS) (*Set, error) {
 	}
 	return set, nil
 }
+
+// LoadUser loads the user's overlay rules from dir (typically
+// ~/.config/macsweep/rules.d). A missing or empty directory yields nil, nil.
+func LoadUser(dir string) (*Set, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("rules: %w", err)
+	}
+	hasYAML := false
+	for _, e := range entries {
+		if ext := path.Ext(e.Name()); !e.IsDir() && (ext == ".yaml" || ext == ".yml") {
+			hasYAML = true
+		}
+	}
+	if !hasYAML {
+		return nil, nil
+	}
+	return Load(os.DirFS(dir))
+}
+
+// Merge layers overlay on top of base: an overlay rule with an existing id
+// replaces the base rule in place, new rules are appended, new groups follow
+// the base groups. Either argument may be nil.
+func Merge(base, overlay *Set) *Set {
+	out := &Set{byID: map[string]int{}}
+	add := func(r Rule) {
+		if i, ok := out.byID[r.ID]; ok {
+			out.Rules[i] = r
+			return
+		}
+		out.byID[r.ID] = len(out.Rules)
+		out.Rules = append(out.Rules, r)
+	}
+	seenGroup := map[string]bool{}
+	for _, set := range []*Set{base, overlay} {
+		if set == nil {
+			continue
+		}
+		for _, r := range set.Rules {
+			add(r)
+		}
+		for _, g := range set.Groups {
+			if !seenGroup[g] {
+				seenGroup[g] = true
+				out.Groups = append(out.Groups, g)
+			}
+		}
+	}
+	return out
+}
+
+// PlaceholderNames lists the path prefixes a rule may use.
+func PlaceholderNames() []string { return append([]string(nil), placeholderNames...) }
 
 // Hash returns a stable fingerprint of all rule files in fsys (used to
 // invalidate the manifest cache when rules change).

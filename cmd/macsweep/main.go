@@ -113,6 +113,12 @@ func run() int {
 	if len(os.Args) > 2 && os.Args[1] == "docker" && os.Args[2] == "prune" {
 		return runDockerPrune(os.Args[3:])
 	}
+	if len(os.Args) > 1 && os.Args[1] == "rules" {
+		return runRules(os.Args[2:])
+	}
+	if len(os.Args) > 1 && os.Args[1] == "agent-context" {
+		return runAgentContext(os.Args[2:])
+	}
 	var (
 		jsonOut  = flag.Bool("json", false, "machine-readable JSON report on stdout")
 		rulesDir = flag.String("rules", "", "load rules from DIR instead of the embedded set")
@@ -165,11 +171,7 @@ func run() int {
 		return fail("%v", err)
 	}
 
-	var rfs fs.FS = rulesfs.FS()
-	if *rulesDir != "" {
-		rfs = os.DirFS(*rulesDir)
-	}
-	set, err := rules.Load(rfs)
+	set, rulesHash, err := loadRules(*rulesDir, home)
 	if err != nil {
 		return fail("%v", err)
 	}
@@ -211,7 +213,7 @@ func run() int {
 		return 0
 	}
 
-	want := manifest.Manifest{Home: home, Roots: resolved.ProjectRoots, RulesHash: rules.Hash(rfs)}
+	want := manifest.Manifest{Home: home, Roots: resolved.ProjectRoots, RulesHash: rulesHash}
 	var cached map[string]scan.Result
 	if *doClean {
 		if err := trash.Available(); err != nil {
@@ -372,6 +374,224 @@ func run() int {
 	}
 	report.WriteText(os.Stdout, rep, isTerminal(os.Stdout) && os.Getenv("NO_COLOR") == "")
 	return 0
+}
+
+// userRulesDir is ~/.config/macsweep/rules.d: the personal overlay merged on
+// top of the embedded rules (same id overrides, new ids are added).
+func userRulesDir(home string) string { return filepath.Join(home, ".config", "macsweep", "rules.d") }
+
+// loadRules returns the effective rule set and a hash for the manifest cache.
+// --rules DIR replaces everything; otherwise embedded + ~/.config/macsweep/rules.d.
+func loadRules(rulesDir, home string) (*rules.Set, string, error) {
+	if rulesDir != "" {
+		var rfs fs.FS = os.DirFS(rulesDir)
+		set, err := rules.Load(rfs)
+		if err != nil {
+			return nil, "", err
+		}
+		return set, rules.Hash(rfs), nil
+	}
+	base, err := rules.Load(rulesfs.FS())
+	if err != nil {
+		return nil, "", err
+	}
+	user, err := rules.LoadUser(userRulesDir(home))
+	if err != nil {
+		return nil, "", fmt.Errorf("user rules in %s: %w", userRulesDir(home), err)
+	}
+	hash := rules.Hash(rulesfs.FS())
+	if user != nil {
+		hash += "+" + rules.Hash(os.DirFS(userRulesDir(home)))
+	}
+	return rules.Merge(base, user), hash, nil
+}
+
+// runRules implements `macsweep rules lint [DIR]` and `macsweep rules list`.
+func runRules(args []string) int {
+	home, _ := os.UserHomeDir()
+	home, _ = filepath.EvalSymlinks(home)
+	if len(args) == 0 || args[0] == "-h" || args[0] == "--help" {
+		fmt.Fprintf(os.Stderr, `macsweep rules lint [DIR]    validate the user rules in DIR (default %s) together with the embedded set
+macsweep rules list [--json] list the effective rules (embedded + user overlay)
+macsweep rules dir           print the user rules directory
+`, report.DisplayPath(userRulesDir(home), home))
+		return 1
+	}
+	switch args[0] {
+	case "dir":
+		fmt.Println(userRulesDir(home))
+		return 0
+	case "lint":
+		dir := userRulesDir(home)
+		if len(args) > 1 {
+			dir = args[1]
+		}
+		base, err := rules.Load(rulesfs.FS())
+		if err != nil {
+			return fail("embedded rules: %v", err)
+		}
+		user, err := rules.LoadUser(dir)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		if user == nil {
+			fmt.Printf("no user rules in %s (embedded set: %d rules OK)\n", report.DisplayPath(dir, home), len(base.Rules))
+			return 0
+		}
+		merged := rules.Merge(base, user)
+		overrides := 0
+		for _, r := range user.Rules {
+			if _, ok := base.ByID(r.ID); ok {
+				overrides++
+			}
+		}
+		fmt.Printf("OK: %d user rule(s) in %s (%d override embedded rules); %d rules effective\n", len(user.Rules), report.DisplayPath(dir, home), overrides, len(merged.Rules))
+		return 0
+	case "list":
+		set, _, err := loadRules("", home)
+		if err != nil {
+			return fail("%v", err)
+		}
+		if len(args) > 1 && args[1] == "--json" {
+			return emitJSON(set.Rules)
+		}
+		for _, r := range set.Rules {
+			target := r.Glob
+			if target == "" {
+				target = strings.Join(r.Paths, ", ")
+			}
+			fmt.Printf("%-34s %-22s %-7s %s\n", r.ID, r.Group, r.Verdict, target)
+		}
+		return 0
+	}
+	return fail("unknown rules subcommand %q", args[0])
+}
+
+// runAgentContext implements `macsweep agent-context [--top N] [--no-discover]`:
+// one JSON document with everything an agent needs to write personal rules.
+func runAgentContext(args []string) int {
+	fs := flag.NewFlagSet("agent-context", flag.ContinueOnError)
+	top := fs.Int("top", 40, "how many uncovered hotspots to include")
+	noDiscover := fs.Bool("no-discover", false, "skip the whole-home walk (faster, no hotspots)")
+	fs.Usage = func() {
+		fmt.Fprint(os.Stderr, `macsweep agent-context [--top N] [--no-discover]
+
+Prints one JSON document for an automated assistant: effective config, where
+user rules live, the rule schema (placeholders, predicates, fields), the
+current report and the largest directories no rule covers. See AGENTS.md.
+`)
+	}
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fail("%v", err)
+	}
+	home, _ = filepath.EvalSymlinks(home)
+	cfg, err := config.Load(config.DefaultPath(home))
+	if err != nil {
+		return fail("%v", err)
+	}
+	resolved, err := config.Resolve(cfg, config.Overrides{}, home)
+	if err != nil {
+		return fail("%v", err)
+	}
+	set, rulesHash, err := loadRules("", home)
+	if err != nil {
+		return fail("%v", err)
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	idx := apps.Load(ctx, home, manifest.CacheDir(home), cacheTTL)
+	env := engine.Env{Home: home, ProjectRoots: resolved.ProjectRoots, Now: time.Now, Apps: idx, Procs: procs.Snap(),
+		Policy: policy.New(home), MinSize: resolved.MinSize, Log: log, UnusedAppDays: resolved.UnusedAppDays}
+	sc := scan.New(scan.Options{Workers: resolved.Workers})
+	var cached map[string]scan.Result
+	want := manifest.Manifest{Home: home, Roots: resolved.ProjectRoots, RulesHash: rulesHash}
+	if m, ok := manifest.Load(manifest.DefaultPath(home), want, cacheTTL); ok {
+		cached = m.ByPath()
+	}
+	rep, measured, err := engine.Run(ctx, env, set, engine.Options{Scanner: sc, Cached: cached, Analyzers: analyze.Default(resolved.Analyzers)})
+	if err != nil {
+		return fail("%v", err)
+	}
+	want.Results = mergeResults(measured, cached)
+	_ = manifest.Save(manifest.DefaultPath(home), want)
+
+	type predDoc struct {
+		Name string           `json:"name"`
+		Args []map[string]any `json:"args"`
+		Doc  string           `json:"doc"`
+	}
+	predDocs := map[string]string{
+		"app_installed":        "the folder name (after strip_version, mapped through map) is an installed application",
+		"bundle_id_registered": "the folder name is a bundle id known to Launch Services",
+		"mtime_older_than":     "newest file inside is older than `days`",
+		"process_running":      "a process named `name` is running",
+		"path_exists":          "a placeholder-prefixed `path` exists",
+		"larger_than":          "the candidate is larger than `bytes`",
+	}
+	var preds []predDoc
+	for name, spec := range rules.Predicates {
+		pd := predDoc{Name: name, Doc: predDocs[name], Args: []map[string]any{}}
+		for _, a := range spec.Args {
+			pd.Args = append(pd.Args, map[string]any{"name": a.Name, "kind": a.Kind, "required": a.Required})
+		}
+		preds = append(preds, pd)
+	}
+	type ruleSummary struct {
+		ID, Group, Verdict, Glob string
+		Paths                    []string
+		User                     bool
+	}
+	var summary []ruleSummary
+	base, _ := rules.Load(rulesfs.FS())
+	for _, r := range set.Rules {
+		_, embedded := base.ByID(r.ID)
+		br, _ := base.ByID(r.ID)
+		summary = append(summary, ruleSummary{ID: r.ID, Group: r.Group, Verdict: r.Verdict.String(), Glob: r.Glob, Paths: r.Paths, User: !embedded || br.Note != r.Note || br.Verdict != r.Verdict})
+	}
+	out := map[string]any{
+		"macsweep_version": version,
+		"home":             home,
+		"config_path":      config.DefaultPath(home),
+		"config":           resolved,
+		"user_rules_dir":   userRulesDir(home),
+		"rule_schema": map[string]any{
+			"file": map[string]any{"version": 1, "group": "display group name", "rules": "list of rules"},
+			"rule_fields": map[string]string{
+				"id": "unique stable id, kebab-case", "paths": "list of placeholder-prefixed literal paths (or use glob)",
+				"glob": "placeholder-prefixed glob, * ? [..] and one **; directories only", "prune": "glob only: do not descend into matches",
+				"exclude": "glob only: basenames never matched", "verdict": "safe | review | keep", "note": "what it is (shown to the user)",
+				"recovery": "how to get it back", "min_size": "e.g. 10MB, hides smaller candidates", "owner_app": "process name that must not be running",
+				"when": "list of {if, args, and:[{if,args}], then, reason}; blocks are OR-ed, the most conservative fired verdict wins; a failing predicate never lowers the verdict",
+			},
+			"placeholders": rules.PlaceholderNames(),
+			"predicates":   preds,
+			"verdicts":     map[string]string{"safe": "the application recreates it; may be trashed with one confirmation", "review": "meaningful data; user decides", "keep": "shown for information, never trashed"},
+		},
+		"rules":  summary,
+		"report": rep,
+	}
+	if !*noDiscover {
+		disc, err := engine.Discover(ctx, env, sc, rep, 1<<30, *top)
+		if err == nil {
+			var unknown []engine.Hotspot
+			for _, h := range disc.Hotspots {
+				if h.Status == "unknown" {
+					unknown = append(unknown, h)
+				}
+			}
+			out["hotspots_uncovered"] = unknown
+			out["home_bytes"] = disc.HomeBytes
+		} else {
+			out["hotspots_error"] = err.Error()
+		}
+	}
+	return emitJSON(out)
 }
 
 // runDockerPrune implements `macsweep docker prune [--select ID…] [--yes] [--json]`.
@@ -820,6 +1040,8 @@ func usage() {
   macsweep undo [last|<run-id>]   restore a clean run from the Trash (see macsweep undo -h)
   macsweep docker prune           remove unused Docker objects (irreversible; asks first)
   macsweep --analyzers=false      rules only, skip the heuristic analyzers
+  macsweep rules lint|list|dir    validate/list rules; personal rules live in ~/.config/macsweep/rules.d
+  macsweep agent-context          JSON bundle for an automated assistant writing personal rules (see AGENTS.md)
   macsweep --group NAME        restrict to a group (repeatable)
   macsweep --projects DIR      project root for build artifacts (repeatable)
   macsweep --min-size 100MB    hide smaller candidates (default 50MB)
